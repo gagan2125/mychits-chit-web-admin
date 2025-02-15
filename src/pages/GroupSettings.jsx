@@ -1,4 +1,3 @@
-// export default GroupSettings;
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import { EyeIcon } from "lucide-react";
@@ -41,57 +40,53 @@ const GroupSettings = () => {
       try {
         const response = await api.get("/group/get-group");
         setGroups(response.data);
+        const formattedData = response.data.map((group, index) => ({
+          checkBox: (
+            <div className="flex justify-center gap-2">
+              <label className="border border-red-400 text-white px-4 py-2 rounded-md shadow hover:border-red-700 transition duration-200">
+                <input
+                  type="checkbox"
+                  checked={group.mobile_access}
+                  onChange={() =>
+                    handleMobileAccessChange(group._id, !group.mobile_access)
+                  }
+                  disabled={updatingGroups.has(group._id)}
+                  className="form-checkbox h-4 w-4 text-red-600 focus:ring-0 focus:ring-offset-0 focus:outline-none checked:bg-red-600 border-gray-300 rounded"
+                />
+              </label>
+            </div>
+          ),
+          id: index + 1,
+          name: group.group_name,
+          type: `${group.group_type
+            .charAt(0)
+            .toUpperCase()}${group.group_type.slice(1)} Group`,
+          value: group.group_value,
+          installment: group.group_install,
+          members: group.group_members,
+          action: (
+            <div className="flex justify-center gap-2">
+              <button
+                onClick={() => handleUpdateModalOpen(group._id)}
+                className="border border-green-400 text-white px-4 py-2 rounded-md shadow hover:border-green-700 transition duration-200"
+              >
+                <EyeIcon color="green" />
+              </button>
+            </div>
+          ),
+        }));
+        setTableGroups(formattedData);
       } catch (error) {
         console.error("Error fetching group data:", error);
       }
     };
     fetchGroups();
-  }, []);
-
-  useEffect(() => {
-    const formattedData = groups.map((group, index) => ({
-      checkBox: (
-        <div className="flex justify-center gap-2">
-          <div className="border border-red-400 text-white px-4 py-2 rounded-md shadow hover:border-red-700 transition duration-200">
-            <input
-              type="checkbox"
-              checked={group.mobile_access}
-              onChange={() =>
-                handleMobileAccessChange(group._id, !group.mobile_access)
-              }
-              disabled={updatingGroups.has(group._id)}
-              className="form-checkbox h-4 w-4 text-red-600 focus:ring-0 focus:ring-offset-0 focus:outline-none checked:bg-red-600 border-gray-300 rounded"
-            />
-          </div>
-        </div>
-      ),
-      id: index + 1,
-      name: group.group_name,
-      type: `${group.group_type
-        .charAt(0)
-        .toUpperCase()}${group.group_type.slice(1)} Group`,
-      value: group.group_value,
-      installment: group.group_install,
-      members: group.group_members,
-      action: (
-        <div className="flex justify-center gap-2">
-          <button
-            onClick={() => handleUpdateModalOpen(group._id)}
-            className="border border-green-400 text-white px-4 py-2 rounded-md shadow hover:border-green-700 transition duration-200"
-          >
-            <EyeIcon color="green" />
-          </button>
-        </div>
-      ),
-    }));
-    setTableGroups(formattedData);
-  }, [groups, searchTerm, updatingGroups]);
+  }, [updatingGroups]);
 
   const handleMobileAccessChange = async (groupId, newValue) => {
     setUpdatingGroups((prev) => new Set([...prev, groupId]));
 
     try {
-      // Optimistic update
       setGroups((prev) =>
         prev.map((group) =>
           group._id === groupId ? { ...group, mobile_access: newValue } : group
@@ -101,8 +96,10 @@ const GroupSettings = () => {
       await api.patch(`/group/update-mobile-access/${groupId}`, {
         mobile_access: newValue,
       });
+
+      const response = await api.get("/group/get-group");
+      setGroups(response.data);
     } catch (error) {
-      // Revert on error
       setGroups((prev) =>
         prev.map((group) =>
           group._id === groupId ? { ...group, mobile_access: !newValue } : group
@@ -112,6 +109,7 @@ const GroupSettings = () => {
       setAlertConfig({
         message: "Failed to update mobile access",
         type: "error",
+
         visibility: true,
       });
     } finally {
