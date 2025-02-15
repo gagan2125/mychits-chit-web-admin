@@ -34,7 +34,6 @@ const GroupSettings = () => {
     commission: 5,
     reg_fee: "",
   });
-
   useEffect(() => {
     const fetchGroups = async () => {
       try {
